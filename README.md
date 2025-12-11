@@ -28,3 +28,7 @@ Empty lines are ignored. The others must be UTF-8.
 
 Every non-empty line is either an eMail address (root@example.com)
 or a domain (example.com) to disallow.
+
+Prefix a domain with a full stop (.example.com) for all subdomains.
+The domain itself must be specified separately (example.com).
+Useful e.g. for whole TLDs.

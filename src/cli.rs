@@ -67,7 +67,10 @@ fn parse_args(args: &mut dyn Iterator<Item = OsString>) -> Result<Args, ParseArg
                     addrs.insert(line);
                 })?,
                 "domain-file" => require_lines(args.next(), |mut line| {
-                    line.insert(0, '@');
+                    if !line.starts_with(".") {
+                        line.insert(0, '@');
+                    }
+
                     domains.push(line);
                 })?,
                 _ => return Err(ParseArgsError::UnknownArg),
