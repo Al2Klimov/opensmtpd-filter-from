@@ -168,7 +168,7 @@ fn main() -> IoResult<()> {
                                     "proceed"
                                 } else {
                                     writeln!(std_err, "Denying")?;
-                                    "reject|550 Sender is blacklisted"
+                                    "reject|550 Sender or domain is blacklisted"
                                 }
                             )?;
                         }
