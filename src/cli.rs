@@ -103,3 +103,83 @@ fn require_lines(
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::ffi::OsString;
+    use std::fs;
+
+    fn args_iter<'a>(v: &'a [&'a str]) -> impl Iterator<Item = OsString> + use<'a> {
+        v.iter().map(|s| OsString::from(s))
+    }
+
+    #[test]
+    fn no_args_returns_empty_sets() {
+        let (_, result, consumed) = parse_cmdline(args_iter(&["program"]));
+        assert_eq!(consumed, 0);
+        let (addrs, domains) = result.ok().unwrap();
+        assert!(addrs.is_empty());
+        assert!(domains.is_empty());
+    }
+
+    #[test]
+    fn unknown_arg_returns_error() {
+        let (_, result, _) = parse_cmdline(args_iter(&["program", "unknown"]));
+        assert!(matches!(result, Err(ParseArgsError::UnknownArg)));
+    }
+
+    #[test]
+    fn addr_file_without_path_returns_error() {
+        let (_, result, _) = parse_cmdline(args_iter(&["program", "addr-file"]));
+        assert!(matches!(result, Err(ParseArgsError::NoFile)));
+    }
+
+    #[test]
+    fn domain_file_without_path_returns_error() {
+        let (_, result, _) = parse_cmdline(args_iter(&["program", "domain-file"]));
+        assert!(matches!(result, Err(ParseArgsError::NoFile)));
+    }
+
+    #[test]
+    fn addr_file_empty_name_returns_error() {
+        let (_, result, _) = parse_cmdline(args_iter(&["program", "addr-file", ""]));
+        assert!(matches!(result, Err(ParseArgsError::EmptyName)));
+    }
+
+    #[test]
+    fn addr_file_nonexistent_returns_error() {
+        let path = std::env::temp_dir()
+            .join("nonexistent_subdir_xyz789")
+            .join("nonexistent_file.txt");
+        let path_str = path.to_str().unwrap().to_string();
+        let (_, result, _) = parse_cmdline(args_iter(&["program", "addr-file", &path_str]));
+        assert!(matches!(result, Err(ParseArgsError::BadFile(_))));
+    }
+
+    #[test]
+    fn addr_file_loads_addresses() {
+        let path = std::env::temp_dir().join("test_addr_file_loads_addresses.txt");
+        fs::write(&path, "user@example.com\nother@test.com\n").unwrap();
+        let path_str = path.to_str().unwrap().to_string();
+        let (_, result, _) = parse_cmdline(args_iter(&["program", "addr-file", &path_str]));
+        let (addrs, domains) = result.ok().unwrap();
+        assert!(addrs.contains("user@example.com"));
+        assert!(addrs.contains("other@test.com"));
+        assert!(domains.is_empty());
+        fs::remove_file(path).ok();
+    }
+
+    #[test]
+    fn domain_file_loads_domains() {
+        let path = std::env::temp_dir().join("test_domain_file_loads_domains.txt");
+        fs::write(&path, "example.com\n.sub.test.com\n").unwrap();
+        let path_str = path.to_str().unwrap().to_string();
+        let (_, result, _) = parse_cmdline(args_iter(&["program", "domain-file", &path_str]));
+        let (addrs, domains) = result.ok().unwrap();
+        assert!(addrs.is_empty());
+        assert!(domains.contains(&"@example.com".to_string()));
+        assert!(domains.contains(&".sub.test.com".to_string()));
+        fs::remove_file(path).ok();
+    }
+}

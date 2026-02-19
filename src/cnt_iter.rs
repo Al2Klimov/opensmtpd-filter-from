@@ -28,3 +28,43 @@ impl<T, I: Iterator<Item = T>> Iterator for CounterIterator<I> {
         ret
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn taken_starts_at_zero() {
+        let ci = CounterIterator::new(std::iter::empty::<i32>());
+        assert_eq!(ci.taken(), 0);
+    }
+
+    #[test]
+    fn taken_increments_on_next() {
+        let mut ci = CounterIterator::new(vec![1, 2, 3].into_iter());
+        assert_eq!(ci.taken(), 0);
+        ci.next();
+        assert_eq!(ci.taken(), 1);
+        ci.next();
+        assert_eq!(ci.taken(), 2);
+        ci.next();
+        assert_eq!(ci.taken(), 3);
+    }
+
+    #[test]
+    fn items_passed_through() {
+        let mut ci = CounterIterator::new(vec![10, 20, 30].into_iter());
+        assert_eq!(ci.next(), Some(10));
+        assert_eq!(ci.next(), Some(20));
+        assert_eq!(ci.next(), Some(30));
+        assert_eq!(ci.next(), None);
+    }
+
+    #[test]
+    fn taken_not_incremented_when_exhausted() {
+        let mut ci = CounterIterator::new(vec![1].into_iter());
+        ci.next();
+        ci.next(); // None
+        assert_eq!(ci.taken(), 1);
+    }
+}
