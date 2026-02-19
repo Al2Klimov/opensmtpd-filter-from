@@ -19,3 +19,29 @@ pub(crate) fn join_write_bytes<'a>(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty_iterator_writes_nothing() {
+        let mut buf = Vec::new();
+        join_write_bytes(&mut buf, b"|", std::iter::empty()).unwrap();
+        assert!(buf.is_empty());
+    }
+
+    #[test]
+    fn single_item_no_separator() {
+        let mut buf = Vec::new();
+        join_write_bytes(&mut buf, b"|", [b"hello" as &[u8]].iter().copied()).unwrap();
+        assert_eq!(buf, b"hello");
+    }
+
+    #[test]
+    fn multiple_items_joined_with_separator() {
+        let mut buf = Vec::new();
+        join_write_bytes(&mut buf, b"|", [b"a" as &[u8], b"b", b"c"].iter().copied()).unwrap();
+        assert_eq!(buf, b"a|b|c");
+    }
+}
